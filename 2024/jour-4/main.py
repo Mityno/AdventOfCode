@@ -108,4 +108,4 @@ def main(filename):
 
 
 if __name__ == "__main__":
-    main("input2")  # < 20387
+    main("input3.txt")  # < 20387
