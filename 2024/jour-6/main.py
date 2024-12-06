@@ -31,6 +31,7 @@ def main(filename):
         new_y = pos_y + direction[1]
 
         if not (0 <= new_x <= n - 1 and 0 <= new_y <= n - 1):
+            # the guard went out
             break
 
         if guard_map[new_x, new_y] == "#":
@@ -44,7 +45,6 @@ def main(filename):
 
     # Part 2
     guard_map = import_map(filename)
-    print(guard_map)
 
     n = len(guard_map)
     loop_counter = 0
@@ -65,7 +65,7 @@ def main(filename):
             direction = next(directions)
             (pos_x,), (pos_y,) = numpy.where(curr_guard_map == "^")
 
-            history = [(pos_x, pos_y, direction)]
+            history = {(pos_x, pos_y, direction)}
             looped = False
 
             while 0 <= pos_x <= n - 1 and 0 <= pos_y <= n - 1:
@@ -76,10 +76,23 @@ def main(filename):
                 new_y = pos_y + direction[1]
 
                 if not (0 <= new_x <= n - 1 and 0 <= new_y <= n - 1):
+                    # the guard went out
                     break
 
-                if curr_guard_map[new_x, new_y] in ("#", "O"):
+                finished = False
+
+                while curr_guard_map[new_x, new_y] in ("#", "O"):
+
                     direction = next(directions)
+                    new_x = pos_x + direction[0]
+                    new_y = pos_y + direction[1]
+                    if not (0 <= new_x <= n - 1 and 0 <= new_y <= n - 1):
+                        # the guard went out
+                        finished = True
+                        break
+
+                if finished:
+                    break
 
                 pos_x = pos_x + direction[0]
                 pos_y = pos_y + direction[1]
@@ -87,7 +100,7 @@ def main(filename):
                 if (pos_x, pos_y, direction) in history:
                     looped = True
                     break
-                history.append((pos_x, pos_y, direction))
+                history.add((pos_x, pos_y, direction))
 
             if looped:
                 loop_counter += 1
