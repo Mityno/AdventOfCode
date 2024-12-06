@@ -1,7 +1,8 @@
+from copy import deepcopy
+
+
 def import_data(filename):
-
     with open(filename, mode="r", encoding="utf8") as file:
-
         rules = {}
         while line := file.readline().strip():
             page, before = map(int, line.split("|"))
@@ -16,7 +17,6 @@ def import_data(filename):
 
 
 def main(filename):
-
     rules, updates = import_data(filename)
     print(updates)
     print(rules)
@@ -24,7 +24,6 @@ def main(filename):
     # Part 1
     total_middles = 0
     for update in updates:
-
         # check ordering
         ordered = True
         for index, curr_page in enumerate(update):
@@ -44,11 +43,10 @@ def main(filename):
         total_middles += middle
     print(total_middles)
 
-
     # Part 2
+    initial_updates = deepcopy(updates)
     total_middles = 0
     for update in updates:
-
         # check and fixe ordering
         was_ordered = True
         index = 0
@@ -80,5 +78,23 @@ def main(filename):
         total_middles += middle
     print(total_middles)
 
+    # updates = deepcopy(initial_updates)
+    # total_middles = 0
+    #
+    # for update in updates:
+    #
+    #     # une page est trié selon la plus petite page qui doit absolument la suivre
+    #     # si une page n'a pas de suivant (elle peut aller à la fin), sa valeur de tri est l'infini
+    #     # smallest_follower = min(rules[page], float('inf'))
+    #     print(update)
+    #     update_with_next = [(page, min(rules.get(page, [float('inf')]))) for page in update]
+    #     ordered_update = sorted(update_with_next, key=lambda tup: tup[1])
+    #     print(ordered_update)
+    #
+    #     middle, _ = ordered_update[len(ordered_update)//2]
+    #     total_middles += 1
+    #
+    # print(total_middles)
+
 if __name__ == "__main__":
-    main("input2")
+    main("input1")
