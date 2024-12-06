@@ -1,6 +1,5 @@
 import numpy
 import time
-import itertools
 import functools
 
 
