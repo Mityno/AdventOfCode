@@ -13,7 +13,7 @@ def import_map(filename):
 
 
 @functools.cache
-def next_direction(direction):
+def next_direction(direction) -> tuple[int, int]:
     "Returns the direction turned to its right"
     if direction is None:
         return (-1, 0)
@@ -34,14 +34,14 @@ def walk(guard_map, pos: tuple[int, int], direction: tuple[int, int] | None = No
     while 0 <= pos_x <= n - 1 and 0 <= pos_y <= n - 1:
         guard_map[pos_x, pos_y] = "X"
 
-        new_x = pos_x + direction[0]
-        new_y = pos_y + direction[1]
+        next_x = pos_x + direction[0]
+        next_y = pos_y + direction[1]
 
-        if not (0 <= new_x <= n - 1 and 0 <= new_y <= n - 1):
+        if not (0 <= next_x <= n - 1 and 0 <= next_y <= n - 1):
             # the guard went out
             break
 
-        if guard_map[new_x, new_y] == "#":
+        if guard_map[next_x, next_y] == "#":
             direction = next_direction(direction)
 
         pos_x = pos_x + direction[0]
@@ -57,57 +57,71 @@ def walk_with_search(
     n = len(guard_map)
     pos_x, pos_y = pos
     history = {(pos_x, pos_y, direction)}
-    loop_set = set()
+    path = {(pos_x, pos_y)}
+    loop_counter = 0
 
     while 0 <= pos_x <= n - 1 and 0 <= pos_y <= n - 1:
         old_pos_x, old_pos_y = pos_x, pos_y
         old_direction = direction
 
-        # check is "placing" an obstacle in front would cause a loop
-        direction = next_direction(direction)
+        # check if "placing" an obstacle in front would cause a loop
+        obstacle_x, obstacle_y = old_pos_x + direction[0], old_pos_y + direction[1]
+        direction = next_direction(direction)  # hit an obstacle, change direction
+        loop_history = set()
         looped = False
-        loop_history = history.copy()
-        while 0 <= pos_x <= n - 1 and 0 <= pos_y <= n - 1:
-            new_x = pos_x + direction[0]
-            new_y = pos_y + direction[1]
+        skipped = False
 
-            if not (0 <= new_x <= n - 1 and 0 <= new_y <= n - 1):
+        if (obstacle_x, obstacle_y) in path:
+            # the obstacle would have blocked us earlier
+            skipped = True
+
+        if guard_map[obstacle_x, obstacle_y] == "#":
+            # we cannot place an obstacle where there is already a wall
+            # (and we already know it won't cause a loop)
+            skipped = True
+
+        while not skipped and 0 <= pos_x <= n - 1 and 0 <= pos_y <= n - 1:
+            next_x = pos_x + direction[0]
+            next_y = pos_y + direction[1]
+
+            if not (0 <= next_x <= n - 1 and 0 <= next_y <= n - 1):
                 # the guard went out
                 break
 
-            if guard_map[new_x, new_y] == "#":
+            if guard_map[next_x, next_y] == "#":
                 direction = next_direction(direction)
 
             pos_x = pos_x + direction[0]
             pos_y = pos_y + direction[1]
 
-            if (pos_x, pos_y, direction) in loop_history:
+            if (pos_x, pos_y, direction) in history or (pos_x, pos_y, direction) in loop_history:
                 looped = True
                 break
 
             loop_history.add((pos_x, pos_y, direction))
 
         if looped:
-            loop_set.add((old_pos_x + direction[0], old_pos_y + direction[1]))
+            loop_counter += 1
 
         pos_x, pos_y = old_pos_x, old_pos_y
         direction = old_direction
 
-        new_x = pos_x + direction[0]
-        new_y = pos_y + direction[1]
+        next_x = pos_x + direction[0]
+        next_y = pos_y + direction[1]
 
-        if not (0 <= new_x <= n - 1 and 0 <= new_y <= n - 1):
+        if not (0 <= next_x <= n - 1 and 0 <= next_y <= n - 1):
             # the guard went out
             break
 
-        if guard_map[new_x, new_y] == "#":
+        if guard_map[next_x, next_y] == "#":
             direction = next_direction(direction)
 
         pos_x = pos_x + direction[0]
         pos_y = pos_y + direction[1]
         history.add((pos_x, pos_y, direction))
+        path.add((pos_x, pos_y))
 
-    return len(loop_set)
+    return loop_counter
 
 
 def main(filename):
@@ -120,10 +134,10 @@ def main(filename):
     walk(guard_map, (pos_x, pos_y))
 
     print((guard_map == "X").sum())
-    possible_obstacles = guard_map == "X"
 
     # Part 2
 
+    # possible_obstacles = guard_map == "X"
     # guard_map = import_map(filename)
     #
     # n = len(guard_map)
@@ -142,27 +156,27 @@ def main(filename):
     #
     #         curr_guard_map[obstacle_x, obstacle_y] = "O"
     #
-    #         direction = next_direction(direction)
+    #         direction = next_direction(None)
     #         (pos_x,), (pos_y,) = numpy.where(curr_guard_map == "^")
     #
     #         history = {(pos_x, pos_y, direction)}
     #         looped = False
     #
     #         while 0 <= pos_x <= n - 1 and 0 <= pos_y <= n - 1:
-    #             new_x = pos_x + direction[0]
-    #             new_y = pos_y + direction[1]
+    #             next_x = pos_x + direction[0]
+    #             next_y = pos_y + direction[1]
     #
-    #             if not (0 <= new_x <= n - 1 and 0 <= new_y <= n - 1):
+    #             if not (0 <= next_x <= n - 1 and 0 <= next_y <= n - 1):
     #                 # the guard went out
     #                 break
     #
     #             finished = False
     #
-    #             while curr_guard_map[new_x, new_y] in ("#", "O"):
+    #             while curr_guard_map[next_x, next_y] in ("#", "O"):
     #                 direction = next_direction(direction)
-    #                 new_x = pos_x + direction[0]
-    #                 new_y = pos_y + direction[1]
-    #                 if not (0 <= new_x <= n - 1 and 0 <= new_y <= n - 1):
+    #                 next_x = pos_x + direction[0]
+    #                 next_y = pos_y + direction[1]
+    #                 if not (0 <= next_x <= n - 1 and 0 <= next_y <= n - 1):
     #                     # the guard went out
     #                     finished = True
     #                     break
@@ -196,4 +210,6 @@ def main(filename):
 
 
 if __name__ == "__main__":
-    main("input1")
+    import sys
+    filename = sys.argv[1]
+    main(filename)
