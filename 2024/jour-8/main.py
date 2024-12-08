@@ -1,7 +1,7 @@
 import itertools
 
 
-def import_map(filename):
+def import_map(filename: str):
 
     with open(filename, mode="r", encoding="utf8") as file:
         antenna_map = [list(line.strip()) for line in file]
@@ -9,20 +9,19 @@ def import_map(filename):
     return antenna_map
 
 
-def main(filename):
+def main(filename: str):
     antenna_map = import_map(filename)
     n = len(antenna_map)
-    antenna_dico = {}
+    antenna_dico: dict[str, list[tuple[int, int]]] = {}
 
     for i, line in enumerate(antenna_map):
         for j, point in enumerate(line):
 
             if point != ".":
-                antenna_dico.setdefault(point, [])
-                antenna_dico[point].append((i, j))
+                antenna_dico.setdefault(point, []).append((i, j))
 
     print(antenna_dico)
-    antinodes_locations = set()
+    antinodes_locations: set[tuple[int, int]] = set()
 
     for frequency, locations in antenna_dico.items():
         for a, b in itertools.combinations(locations, 2):
