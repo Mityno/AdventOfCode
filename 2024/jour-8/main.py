@@ -41,7 +41,7 @@ def main(filename: str):
 
     antinodes_locations = set()
 
-    for frequency, locations in antenna_dico.items():
+    for locations in antenna_dico.values():
         for a, b in itertools.combinations(locations, 2):
             x_a, y_a = a
             x_b, y_b = b
