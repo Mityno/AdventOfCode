@@ -48,7 +48,7 @@ def solve_trail(topo_map: Sequence[Sequence[int]], trailhead: tuple[int, int]):
                 # fmt: on
                 curr_path.append(neighbor)
                 inner(neighbor)
-                curr_path.pop()
+                _ = curr_path.pop()
 
     inner(trailhead)
     return len(trail_ends), len(trail_paths)
@@ -58,7 +58,7 @@ def main(filename: str):
     topo_map = import_topo_map(filename)
     print(topo_map)
 
-    trailheads = list(zip(*numpy.where(topo_map == 0)))
+    trailheads: list[tuple[int, int]] = list(zip(*numpy.where(topo_map == 0)))
     print(*trailheads)
     print(len(trailheads))
 

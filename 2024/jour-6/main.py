@@ -1,9 +1,10 @@
+from collections.abc import Sequence
 import numpy
 import time
 import functools
 
 
-def import_map(filename):
+def import_map(filename: str):
     with open(filename, mode="r", encoding="utf8") as file:
         guard_map = file.readlines()
 
@@ -13,7 +14,7 @@ def import_map(filename):
 
 
 @functools.cache
-def next_direction(direction) -> tuple[int, int]:
+def next_direction(direction: tuple[int, int] | None) -> tuple[int, int]:
     "Returns the direction turned to its right"
     if direction is None:
         return (-1, 0)
@@ -24,7 +25,11 @@ def next_direction(direction) -> tuple[int, int]:
     return directions[next_index]
 
 
-def walk(guard_map, pos: tuple[int, int], direction: tuple[int, int] | None = None):
+def walk(
+    guard_map: Sequence[Sequence[str]],
+    pos: tuple[int, int],
+    direction: tuple[int, int] | None = None,
+):
     if direction is None:
         direction = next_direction(direction)
 
@@ -67,7 +72,7 @@ def walk_with_search(
         # check if "placing" an obstacle in front would cause a loop
         obstacle_x, obstacle_y = old_pos_x + direction[0], old_pos_y + direction[1]
         direction = next_direction(direction)  # hit an obstacle, change direction
-        loop_history = set()
+        loop_history: set[tuple[int, int, tuple[int, int]]] = set()
         looped = False
         skipped = False
 
@@ -94,7 +99,11 @@ def walk_with_search(
             pos_x = pos_x + direction[0]
             pos_y = pos_y + direction[1]
 
-            if (pos_x, pos_y, direction) in history or (pos_x, pos_y, direction) in loop_history:
+            if (pos_x, pos_y, direction) in history or (
+                pos_x,
+                pos_y,
+                direction,
+            ) in loop_history:
                 looped = True
                 break
 
@@ -124,12 +133,12 @@ def walk_with_search(
     return loop_counter
 
 
-def main(filename):
+def main(filename: str):
     # Part 1
     guard_map = import_map(filename)
     print(guard_map)
 
-    (pos_x,), (pos_y,) = numpy.where(guard_map == "^")
+    (pos_x,) , (pos_y,)= numpy.where(guard_map == "^")  # pyright: ignore[reportAny]
 
     walk(guard_map, (pos_x, pos_y))
 
@@ -200,7 +209,7 @@ def main(filename):
 
     guard_map = import_map(filename)
 
-    (pos_x,), (pos_y,) = numpy.where(guard_map == "^")
+    (pos_x,), (pos_y,) = numpy.where(guard_map == "^")  # pyright: ignore[reportAny]
     bef = time.perf_counter()
     loop_counter = walk_with_search(guard_map, (pos_x, pos_y))
     aft = time.perf_counter()
@@ -211,5 +220,6 @@ def main(filename):
 
 if __name__ == "__main__":
     import sys
+
     filename = sys.argv[1]
     main(filename)
