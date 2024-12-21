@@ -28,6 +28,18 @@ def coord_to_index(coord: tuple[int, int], n: int) -> int:
 
 
 @functools.cache
+def index_to_coord(index: int, n: int) -> tuple[int, int]:
+    return index % n, index // n
+
+
+@functools.cache
+def index_distance(a: int, b: int, n: int) -> int:
+    x_a, y_a = a % n, a // n
+    x_b, y_b = b % n, b // n
+    return abs(x_a - x_b) + abs(y_a - y_b)
+
+
+@functools.cache
 def index_neighbors(index: int, n: int) -> tuple[int, ...]:
     up = index - n
     down = index + n
@@ -44,6 +56,26 @@ def index_neighbors(index: int, n: int) -> tuple[int, ...]:
     if right // n == index // n and right % n != n - 1:
         neighbors.append(right)
     return tuple(neighbors)
+
+
+@functools.cache
+def generate_point_in_circle(center: int, radius: int, n: int) -> set[int]:
+    x, y = index_to_coord(center, n)
+    points: set[int] = set()
+    for y_dist in range(radius + 1):
+        for x_dist in range(radius + 1 - y_dist):
+            if 0 < x - x_dist and 0 < y - y_dist:
+                points.add(center - y_dist * n - x_dist)
+            if x + x_dist < n and 0 < y - y_dist:
+                points.add(center - y_dist * n + x_dist)
+            if 0 < x - x_dist and y + y_dist < n:
+                points.add(center + y_dist * n - x_dist)
+            if x + x_dist < n and y + y_dist < n:
+                points.add(center + y_dist * n + x_dist)
+    for point in tuple(points):
+        if point < 0 or point >= n**2:
+            points.discard(point)
+    return points
 
 
 def compute_path_cost(
@@ -124,116 +156,47 @@ def dijkstra(space: list[list[str]], start_coord: tuple[int, int]):
     return distances, previouses
 
 
-def path_with_cheating(
-    flat_maze: list[str],
-    optimal_path: list[int],
-    distances: list[int],
-    previouses: list[int],
+def count_cheating_paths(
+    distances_to_start: list[int], distances_to_end: list[int], optimal_distance: int
 ) -> int:
-    start, end = optimal_path[0], optimal_path[-1]
-    optimal_distance = distances[end]
-
-    depth = int(sys.argv[2])
-    print(f"{depth = }")
-
-    cheats: set[tuple[int, int]] = set()
     cheating_counter = 0
-    for curr in optimal_path:
-        cheating_counter += recursive_cheat(
-            flat_maze,
-            distances,
-            previouses,
-            curr,
-            depth,
-            start,
-            end,
-            optimal_distance,
-            cheats,
-        )
+    n_points = len(distances_to_start)
+    n = int(n_points**0.5)
 
-    return cheating_counter
+    # minimum_distance = optimal_distance - 2
+    # minimum_distance = optimal_distance - 50
+    minimum_distance = optimal_distance - 100
 
+    possible_starts = [
+        index
+        for index in range(n_points)
+        if distances_to_start[index] <= minimum_distance
+    ]
+    possible_ends = [
+        index
+        for index in range(n_points)
+        if distances_to_end[index] <= minimum_distance
+    ]
+    print(n_points)
+    print(len(possible_starts))
+    print(len(possible_ends))
+    print(len(set(possible_starts) & set(possible_ends)))
 
-def recursive_cheat(
-    flat_maze: list[str],
-    distances: list[int],
-    previouses: list[int],
-    curr: int,
-    depth: int,
-    start: int,
-    end: int,
-    optimal_distance: int,
-    cheats: set[tuple[int, int]] | None = None,
-    cheat_start: int | None = None,
-) -> int:
-    if depth <= 0:
-        return 0
-
-    if cheats is None:
-        cheats = set()
-    if cheat_start is None:
-        cheat_start = curr
-
-    n = int(len(flat_maze) ** 0.5)
-
-    cheating_counter = 0
-    prev = previouses[curr]
-    for neighbor in index_neighbors(curr, n):
-        if neighbor == prev:  # or flat_maze[neighbor] != "#":
-            # this is not cheating
-            continue
-        if flat_maze[neighbor] == "*":
-            # this would create a loop
+    for cheating_start in possible_starts:
+        start_dist = distances_to_start[cheating_start]
+        if start_dist > minimum_distance:
+            # should be useless
             continue
 
-        old_neighbor_prev = previouses[neighbor]
-        old_neighbor_dist = distances[neighbor]
-
-        # in order not to create a loop by using this again later
-        flat_maze[neighbor] = "*"
-        previouses[neighbor] = curr
-
-        distances[neighbor] = distances[curr] + 1
-
-        # if can_cheat_more:
-        # might cheat one more time
-        cheating_counter += recursive_cheat(
-            flat_maze,
-            distances,
-            previouses,
-            neighbor,
-            depth - 1,
-            start,
-            end,
-            optimal_distance,
-            cheats,
-            cheat_start,
-        )
-
-        for neighbor_2 in index_neighbors(neighbor, n):
-
-            if flat_maze[neighbor_2] == "#":
-                # invalid last cell for a cheat
+        # for cheating_end in possible_ends:
+        for cheating_end in generate_point_in_circle(cheating_start, 20, n):
+            cheating_distance = index_distance(cheating_start, cheating_end, n)
+            total_distance = (
+                start_dist + cheating_distance + distances_to_end[cheating_end]
+            )
+            if total_distance > minimum_distance:
                 continue
-
-            old_neighbor_2_dist = distances[neighbor_2]
-            updated = update_dist(distances, neighbor, neighbor_2)
-            if updated:
-                # it might be a shortcut
-                new_distance = (
-                    distances[end] - old_neighbor_2_dist + distances[neighbor_2]
-                )
-                if new_distance <= optimal_distance: #- 70:
-                    if (cheat_start, neighbor_2) not in cheats:
-                        print(new_distance)
-                        cheating_counter += 1
-                        cheats.add((cheat_start, neighbor_2))
-
-                distances[neighbor_2] = old_neighbor_2_dist
-
-        previouses[neighbor] = old_neighbor_prev
-        distances[neighbor] = old_neighbor_dist
-        flat_maze[neighbor] = "#"
+            cheating_counter += 1
 
     return cheating_counter
 
@@ -253,21 +216,23 @@ def main(filename: str):
 
     # print(*map("".join, maze), sep="\n")
 
-    distances, previouses = dijkstra(maze, start)
+    distances_to_start, previouses_to_start = dijkstra(maze, start)
 
     optimal_path = [end_index]
     curr = end_index
     while curr != start_index:
-        curr = previouses[curr]
+        curr = previouses_to_start[curr]
         optimal_path.append(curr)
     optimal_path.reverse()
     # print(optimal_path)
 
+    optimal_distance = distances_to_start[end_index]
     print(end_index)
-    print("optimal distance", distances[end_index])
+    print("optimal distance", optimal_distance)
 
-    cheating_counter = path_with_cheating(
-        flat_maze, optimal_path, distances, previouses
+    distances_to_end, previouses_to_end = dijkstra(maze, end)
+    cheating_counter = count_cheating_paths(
+        distances_to_start, distances_to_end, optimal_distance
     )
     print("total paths", cheating_counter)
 
@@ -275,5 +240,13 @@ def main(filename: str):
 if __name__ == "__main__":
     import sys
 
+    # n = 50
+    # center = coord_to_index((2, 2), n)
+    # print(center)
+    # points = generate_point_in_circle(center, 10, n)
+    # print(points)
+    # for point in points:
+    #     print(index_distance(center, point, n))
+    # exit()
     filename = sys.argv[1]
     main(filename)
