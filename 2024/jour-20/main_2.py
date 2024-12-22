@@ -40,25 +40,6 @@ def index_distance(a: int, b: int, n: int) -> int:
 
 
 @functools.cache
-def index_neighbors(index: int, n: int) -> tuple[int, ...]:
-    up = index - n
-    down = index + n
-    left = index - 1
-    right = index + 1
-
-    neighbors: list[int] = []
-    if up >= n:  # not before the second line
-        neighbors.append(up)
-    if down < n**2 - n:  # not after the last but one line
-        neighbors.append(down)
-    if left // n == index // n and left % n != 0:  # fmt: skip # check they are on the same line (== same y) and not on the edge
-        neighbors.append(left)
-    if right // n == index // n and right % n != n - 1:
-        neighbors.append(right)
-    return tuple(neighbors)
-
-
-@functools.cache
 def generate_point_in_circle(center: int, radius: int, n: int) -> set[int]:
     x, y = index_to_coord(center, n)
     points: set[int] = set()
@@ -76,23 +57,6 @@ def generate_point_in_circle(center: int, radius: int, n: int) -> set[int]:
         if point < 0 or point >= n**2:
             points.discard(point)
     return points
-
-
-def compute_path_cost(
-    start: int, end: int, next_table: list[int], max_length: int | None = None
-):
-    if max_length is None:
-        max_length = len(next_table)
-
-    total_cost = 0
-    curr = start
-    while curr != end:
-        next = next_table[curr]
-        total_cost += 1
-        if total_cost > max_length:
-            return max_length  # return a greater distance than possible without loop
-        curr = next
-    return total_cost
 
 
 def create_adjacency_matrix(space: list[list[str]]) -> list[None | tuple[int, ...]]:
@@ -159,42 +123,31 @@ def dijkstra(space: list[list[str]], start_coord: tuple[int, int]):
 def count_cheating_paths(
     distances_to_start: list[int], distances_to_end: list[int], optimal_distance: int
 ) -> int:
-    cheating_counter = 0
     n_points = len(distances_to_start)
     n = int(n_points**0.5)
 
-    # minimum_distance = optimal_distance - 2
-    # minimum_distance = optimal_distance - 50
-    minimum_distance = optimal_distance - 100
+    # maximum_distance = optimal_distance - 2
+    # maximum_distance = optimal_distance - 50
+    maximum_distance = optimal_distance - 100
+
+    end = [i for i in range(n_points) if distances_to_end[i] == 0][0]
 
     possible_starts = [
         index
         for index in range(n_points)
-        if distances_to_start[index] <= minimum_distance
+        if index_distance(index, end, n) + distances_to_start[index] <= maximum_distance
     ]
-    possible_ends = [
-        index
-        for index in range(n_points)
-        if distances_to_end[index] <= minimum_distance
-    ]
-    print(n_points)
-    print(len(possible_starts))
-    print(len(possible_ends))
-    print(len(set(possible_starts) & set(possible_ends)))
 
+    cheating_counter = 0
     for cheating_start in possible_starts:
         start_dist = distances_to_start[cheating_start]
-        if start_dist > minimum_distance:
-            # should be useless
-            continue
 
-        # for cheating_end in possible_ends:
         for cheating_end in generate_point_in_circle(cheating_start, 20, n):
             cheating_distance = index_distance(cheating_start, cheating_end, n)
             total_distance = (
                 start_dist + cheating_distance + distances_to_end[cheating_end]
             )
-            if total_distance > minimum_distance:
+            if total_distance > maximum_distance:
                 continue
             cheating_counter += 1
 
@@ -204,7 +157,6 @@ def count_cheating_paths(
 def main(filename: str):
 
     maze = import_maze(filename)
-    flat_maze = [cell for line in maze for cell in line]
 
     n = len(maze)
     start: tuple[int, int] = find(maze, "S")
@@ -213,7 +165,6 @@ def main(filename: str):
     end_index = coord_to_index(end, n)
 
     # Part 1
-
     # print(*map("".join, maze), sep="\n")
 
     distances_to_start, previouses_to_start = dijkstra(maze, start)
@@ -224,13 +175,13 @@ def main(filename: str):
         curr = previouses_to_start[curr]
         optimal_path.append(curr)
     optimal_path.reverse()
-    # print(optimal_path)
 
+    # Part 2 (and 1)
     optimal_distance = distances_to_start[end_index]
     print(end_index)
     print("optimal distance", optimal_distance)
 
-    distances_to_end, previouses_to_end = dijkstra(maze, end)
+    distances_to_end, _ = dijkstra(maze, end)
     cheating_counter = count_cheating_paths(
         distances_to_start, distances_to_end, optimal_distance
     )
@@ -240,13 +191,5 @@ def main(filename: str):
 if __name__ == "__main__":
     import sys
 
-    # n = 50
-    # center = coord_to_index((2, 2), n)
-    # print(center)
-    # points = generate_point_in_circle(center, 10, n)
-    # print(points)
-    # for point in points:
-    #     print(index_distance(center, point, n))
-    # exit()
     filename = sys.argv[1]
     main(filename)

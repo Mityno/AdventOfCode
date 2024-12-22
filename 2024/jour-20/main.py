@@ -221,9 +221,12 @@ def recursive_cheat(
             if updated:
                 # it might be a shortcut
                 new_distance = (
-                    distances[end] - old_neighbor_2_dist + distances[neighbor_2]
+                    # distances[end] - old_neighbor_2_dist + distances[neighbor_2]
+                    optimal_distance
+                    - old_neighbor_2_dist
+                    + distances[neighbor_2]
                 )
-                if new_distance <= optimal_distance: #- 70:
+                if new_distance <= optimal_distance - 70:  # - 70:
                     if (cheat_start, neighbor_2) not in cheats:
                         print(new_distance)
                         cheating_counter += 1
