@@ -15,7 +15,7 @@ def next_secret(secret: int):
     return secret
 
 
-def find_best_seq(secrets: list[int]) -> tuple[int, int, int, int]:
+def find_best_seq(secrets: list[int]) -> tuple[tuple[int, ...], int]:
     variations: list[tuple[tuple[int, int], ...]] = []
     for secret in secrets:
         curr_variation: list[tuple[int, int]] = []
@@ -43,8 +43,8 @@ def find_best_seq(secrets: list[int]) -> tuple[int, int, int, int]:
         dico_variations_to_secrets.keys(),
         key=lambda key: sum(dico_variations_to_secrets[key].values()),
     )
-    print(best_seq)
-    print(sum(dico_variations_to_secrets[best_seq].values()))
+    best_seq_value = sum(dico_variations_to_secrets[best_seq].values())
+    return best_seq, best_seq_value
 
 
 def main(filename: str):
@@ -57,7 +57,8 @@ def main(filename: str):
         total += secret
     print("total", total)
 
-    seq = find_best_seq(secrets)
+    best_seq, value = find_best_seq(secrets)
+    print(value)
 
 
 if __name__ == "__main__":
