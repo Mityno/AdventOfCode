@@ -55,20 +55,33 @@ def compute_circuit(
     return wires
 
 
+def get_wires_value(wires: dict[str, int], startswith: str) -> int:
+    names: list[str] = [name for name in wires.keys() if name.startswith(startswith)]
+    names.sort(reverse=True)
+    bin_str = "".join([str(wires[name]) for name in names])
+    bin_num = int(bin_str, 2)
+    return bin_num
+
+
 def main(filename: str):
 
     wires, gates = import_wires_gates(filename)
-    print(wires)
-    print(gates)
+    # print(wires)
+    # print(gates)
 
-    _ = compute_circuit(wires, gates)
-    print(wires)
+    # Part 1
+    _ = compute_circuit(wires, gates.copy())
+    # print(wires)
 
-    z_names: list[str] = [name for name in wires.keys() if name.startswith("z")]
-    z_names.sort(reverse=True)
-    bin_str = "".join([str(wires[z_name]) for z_name in z_names])
-    bin_num = int(bin_str, 2)
-    print(bin_num)
+    z = get_wires_value(wires, "z")
+    print(f"{z = }")
+
+    # Part 2
+    x = get_wires_value(wires, "x")
+    y = get_wires_value(wires, "y")
+    print(f"{x = }, {y = }, {x + y = }")
+    diff = z - (x + y)
+    print("diff", diff, f"({diff/(x + y) * 100:.2f}%)")
 
 
 OP_NAME_TO_FUNCTION = {"AND": binary_and, "OR": binary_or, "XOR": binary_xor}
