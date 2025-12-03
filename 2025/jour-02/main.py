@@ -15,7 +15,6 @@ def solve(ranges: list[tuple[int, int]]) -> int:
         for num in range(start, end + 1):
             num_str = str(num)
             n = len(num_str)
-            half = n // 2
 
             is_invalid = False
             for divisor in range(2, n + 1):
