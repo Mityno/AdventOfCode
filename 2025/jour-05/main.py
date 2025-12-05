@@ -26,9 +26,6 @@ def read_datas():
 
 def count_fresh(ranges: list[range], ids: list[int]) -> int:
 
-    ranges = sorted(ranges, key=lambda r: r.start)
-    # print(ranges)
-
     fresh_counter = 0
     for id in ids:
         fresh_counter += any(id in range for range in ranges)
