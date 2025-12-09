@@ -66,8 +66,13 @@ def slow_union_until_fully_merged(
         for j in range(n)
         if i < j
     }
-    sorted_connections = sorted(connexions.keys(), key=lambda k: connexions[k])
 
+    bef = time.perf_counter()
+    sorted_connections = sorted(connexions.keys(), key=lambda k: connexions[k])
+    aft = time.perf_counter()
+    print(f"Sorting connexions : {aft-bef:.2f}s")
+
+    bef = time.perf_counter()
     for curr, closest in sorted_connections:
 
         # merge the groups from the current one and closest into the current one
@@ -88,6 +93,8 @@ def slow_union_until_fully_merged(
         groups[closest_group_index].clear()
 
         if len(groups[curr_group_index]) == n:
+            aft = time.perf_counter()
+            print(f"Merging connexions : {aft-bef:.2f}s")
             return coords[curr][0], coords[closest][0]
 
     raise ValueError("couldn't finish merging into a single group")
