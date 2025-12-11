@@ -71,13 +71,11 @@ def bfs_count_paths_with_constraints(
     lost_nodes: set[str] = set(adjency_dict.keys()) | {goal}
     for constraint in constraints:
         lost_nodes &= get_all_reachable_nodes(adjency_dict, constraint, "out")
-    # print(len(lost_nodes), "/", len(adjency_dict))
 
     path_counter = 0
 
     node_path_counter: dict[node_valid_t, int] = {(start, empty_constraints): 1}
 
-    # print("starting search")
     while frontier:
 
         curr_node_with_info = curr_node, curr_valid = frontier.popleft()
@@ -88,12 +86,6 @@ def bfs_count_paths_with_constraints(
         if curr_node == goal:
             # the state is valid because we pruned the invalid path before
             path_counter += node_path_counter[curr_node_with_info]
-            # print(
-            #     "here",
-            #     path_counter,
-            #     node_path_counter[curr_node_with_info],
-            #     curr_valid,
-            # )
             continue
 
         updated_valid = tuple(

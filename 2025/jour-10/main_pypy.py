@@ -1,9 +1,9 @@
 from ast import literal_eval
+import sympy
 import numpy
-import scipy.optimize as spo
 
 
-def read_datas() -> list[str]:
+def read_datas():
 
     n = int(input())
     raw_machines = [input() for _ in range(n)]
@@ -11,20 +11,18 @@ def read_datas() -> list[str]:
     return raw_machines
 
 
-def parse_machine(machine: str) -> tuple[str, list[tuple[int, ...]], list[int]]:
+def parse_machine(machine):
 
     parts = machine.split(" ")
 
     indicator_lights = parts[0].strip("[]")
-    buttons: list[tuple[int, ...]] = list(
-        map(lambda s: literal_eval(s.replace(")", ",)")), parts[1:-1])
-    )
+    buttons = list(map(lambda s: literal_eval(s.replace(")", ",)")), parts[1:-1]))
     joltages = list(map(int, parts[-1].strip("{}").split(",")))
 
     return indicator_lights, buttons, joltages
 
 
-def heuristic[node_type](state: node_type, end: node_type):
+def heuristic(state, end):
     # return 0
     return max(
         end[index] - state[index] if end[index] >= state[index] else float("inf")
@@ -32,7 +30,7 @@ def heuristic[node_type](state: node_type, end: node_type):
     )
 
 
-def get_next_node[node_type](state: node_type, action: tuple[int, ...]) -> node_type:
+def get_next_node(state, action):
     if isinstance(state[0], bool):
         return tuple(
             not value if index in action else value for index, value in enumerate(state)
@@ -41,12 +39,12 @@ def get_next_node[node_type](state: node_type, action: tuple[int, ...]) -> node_
         return tuple(value + (index in action) for index, value in enumerate(state))
 
 
-def update_node[node_type](
-    next_node: node_type,
-    curr_node: node_type,
-    distances: dict[node_type, int],
-    prev: dict[node_type, node_type],
-) -> bool:
+def update_node(
+    next_node,
+    curr_node,
+    distances,
+    prev,
+):
 
     if distances[curr_node] + 1 < distances.get(next_node, float("inf")):
         distances[next_node] = distances[curr_node] + 1
@@ -55,12 +53,10 @@ def update_node[node_type](
     return False
 
 
-def a_star[node_type](
-    state: node_type, actions: list[tuple[int, ...]], end: node_type
-) -> int:
+def a_star(state, actions, end):
 
-    distances: dict[node_type, int] = {state: 0}
-    prev: dict[node_type, node_type] = {}
+    distances = {state: 0}
+    prev = {}
     frontier = {state}
     while frontier:
         curr_node = min(
@@ -81,7 +77,7 @@ def a_star[node_type](
     return distances[end]
 
 
-def fewest_light_buttons(lights: str, buttons: list[tuple[int, ...]]) -> int:
+def fewest_light_buttons(lights, buttons):
 
     bin_lights = tuple(char == "#" for char in lights)
     # print(lights, list(map(int, bin_lights)))
@@ -92,7 +88,7 @@ def fewest_light_buttons(lights: str, buttons: list[tuple[int, ...]]) -> int:
     return button_presses
 
 
-def get_buttons_matrix(buttons: list[tuple[int, ...]], n_joltages: int):
+def get_buttons_matrix(buttons, n_joltages):
 
     matrix = numpy.zeros((n_joltages, len(buttons)), dtype=int)
     for column, button in enumerate(buttons):
@@ -102,27 +98,61 @@ def get_buttons_matrix(buttons: list[tuple[int, ...]], n_joltages: int):
     return matrix
 
 
-def fewest_joltage_buttons(joltages: list[int], buttons: list[tuple[int, ...]]) -> int:
+def fewest_joltage_buttons(joltages, buttons):
 
     n_buttons = len(buttons)
-    n_joltages = len(joltages)
-    # goal_joltages = tuple(joltages)
-    # start_joltages = (0,) * len(joltages)
+    goal_joltages = tuple(joltages)
+    start_joltages = (0,) * len(joltages)
     # button_presses = a_star(start_joltages, buttons, goal_joltages)
 
-    A = get_buttons_matrix(buttons, len(joltages))
-    b = numpy.array(joltages).T
-    c = numpy.ones(n_buttons, dtype=int)
+    matrix = get_buttons_matrix(buttons, len(joltages))
+    # print(matrix)
 
+    # variables = sympy.symbols(
+    #     " ".join(chr(index + ord("a")) for index in range(n_buttons))
+    # )
+    # space = {var: sympy.Naturals0 for var in variables}
+    # print(space)
+    # for line_index, line in enumerate(matrix):
+    #     left_side = sum(line * variables)
+    #     reference_variable = left_side.args[0]
+    #     print(left_side.args)
+    #     equation = sympy.Eq(left_side, joltages[line_index])
+    #     solution_set = sympy.solveset(
+    #         equation, reference_variable, domain=sympy.Naturals0
+    #     )
+    #     restricted_set = space[reference_variable].intersect(solution_set)
+    #     space[reference_variable] = restricted_set
+    #     print(space)
+
+    A = sympy.Matrix(matrix)
+    b = sympy.Matrix(joltages)
     # print(A)
-    # print(b)
-    # print(c)
+    # print(b, sympy.shape(b))
+    X = sympy.linsolve((A, b))
+    # X: FiniteSet = sympy.solveset((A, b), domain=sympy.Naturals0)
+    # print(X)
+    sum_X = sum(X.args[0])
+    args = sum_X.args
+    # print(X.args, sum(X.args[0]), args)
+    if args:
+        constant = args[0]
+    else:
+        constant = sum_X
 
-    x = spo.linprog(c, A_eq=A, b_eq=b, integrality=1)
-    # print(x)
-    # print(x.x)
+    gcd = sum_X.primitive()[0]
+    if any(int(value.primitive()[0]) != value.primitive()[0] for value in X.args[0]):
+        print(joltages)
+        print(buttons)
+        # print(X)
+        # print(next(iter(X.intersect(sympy.Naturals0**n_buttons))))
+        # print(X.args)
+        # print(sum_X, sum_X.primitive())
+        # print(args)
+        # print()
+        return a_star(start_joltages, buttons, goal_joltages)
 
-    return int(x.x.sum())
+    return constant
 
 
 def main():
